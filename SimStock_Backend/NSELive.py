@@ -13,26 +13,29 @@ from selenium.common.exceptions import TimeoutException
 from firebase import firebase
 
 firebase = firebase.FirebaseApplication(
-    "https://smarttech-ee0de.firebaseio.com/", None
+    "YOUR_FIREBASE_REALTIME_DATABASE_HERE", None
 )
 
 browser = webdriver.Chrome()
 
-userStocks = firebase.get('/UserStocks',None)
-print(userStocks)
+userStocks = firebase.get('/UserStocks',None)  # Fetching the stocks that have been subscribed by the users
+
+#### READING ALL THE STOCK LISTINGS IN NSE(National Stock Exchange) FROM CSV FILE #######
 df = pd.read_csv("EQUITY_L.csv")
 
+### FETCHING STOCK SYMBOL and NAME OF COMPANY #######
 allSymbols = df['SYMBOL']
 dfallSymbols = pd.DataFrame(allSymbols)
 allCompanyNames = df['NAME OF COMPANY']
 dfallCompanyNames = pd.DataFrame(allCompanyNames)
 
-isUserStock = False
+isUserStock = False         # Boolean Value to check if there are any current user subscribed Stocks
 
 symbols = []
 companyNames = []
 i = 0
 
+############    COPYING THE USER SUBSCRIBED STOCKS (If Available) INTO THE SYMLBOLS,COMPANY_NAME VARIABLES ##########
 if userStocks!=None and len(userStocks)!=0 :
     for stock in userStocks :
         symbols.append(stock)
@@ -47,19 +50,27 @@ else:
     i = firebase.get('/StockCount',None)
     isUserStock = False
 
-
-refreshcount = 0
+## Refresh flag variable to keep track of number of refresh performed consecutively in the chrome driver
+refreshcount = 0    
 refreshInnercount = 0
+
+
 stockColor = 'Green'
 
 iterationCount = 1
 
+
+## INFINTIE LOOP FOR STOCK DETAILS UPDATION ###
 while True:
     symbols = []
     companyNames = []
     i = 0
+    
+    ### Stroing the number of times all the stocks have been refreshed
     firebase.put('/','Iteration Number',iterationCount)
     iterationCount = iterationCount + 1
+    
+    ### If the time has crossed 15:00 then start updating the complete list of stocks instead of only the user subscribed ones
 
     if userStocks!=None and len(userStocks)!=0 and datetime.now().time()<datetime.fromtimestamp(1596362400).time():
         for stock in userStocks :
@@ -76,15 +87,19 @@ while True:
     
     if datetime.now().time()>datetime.fromtimestamp(1596362400).time():
         i = 0
+        
+        #### Scraping the live data from the NSE website for the stocks present in to symbols array (Either user subscribed or all the stocks)
 
     while i < len(symbols):
 
-
+            ## If the time has crossed 15:00 exit the loop
         userStocks = firebase.get('/UserStocks',None)
         if(userStocks!=None and isUserStock==False and datetime.now().time()<datetime.fromtimestamp(1596362400).time()):
             break
         
         firebase.put('/','Running',1)
+        
+        ######## WEB SCRAPING BEGINS #########
             
         browser.delete_all_cookies()
             
@@ -94,16 +109,11 @@ while True:
         )
         browser.get(url)
         try:
-            time.sleep(2.5)
+            time.sleep(2.5)     # Making the thread sleep for 2.5secs to allow the page to load the data
 
             split = str(browser.page_source).split('<input id="gq-e-rangeslider1" type="range"')
-
             
-
-            
-
-            #<span id="priceInfoStatus" class="blkbox-redtxt">-9.80 (-3.53%)</span>
-
+            ## CHECKING FOR FAILURE IN DRIVER 
 
             if refreshcount==10 or refreshInnercount==10:
                 i+=1            #Starting a new chrome widow if the current window fails even after 10 refresh
@@ -127,11 +137,15 @@ while True:
                     print('RefreshingInner ' + str(refreshInnercount) + 'times')
                     refreshInnercount+=1
                 else:
+                        ### ALL CHECKS PASSED NOW PROCESSING AND THEN ENTERING DATA TO FIREBASE ###
+                        
                     firebase.put('/','userStockCount',i) if isUserStock else firebase.put('/','StockCount',i) 
                     refreshInnercount = 0                               # Reseting refresh so that every stock gets 10 chances.
 
                     split2 = str(browser.page_source).split('<span id="priceInfoStatus" class="blkbox-')
                     stockInfo = ''
+                    
+                    # FETCHING COLOUR AND STOCK Information
                     if(split2[1].startswith('red')):
                         stockColor = 'Red'
                         splitStockInfo = split2[1].split('</span>')
@@ -142,14 +156,16 @@ while True:
                         splitStockInfo = split2[1].split('</span>')
                         splitStockInfo3 = splitStockInfo[0].split('greentxt">')
                         stockInfo = splitStockInfo3[1]
-                    
-                    allValuesSplitForLow = allValues.split('min="')
+                        
+                        
+                   
+                    allValuesSplitForLow = allValues.split('min="')         # LOW till now today
                     low = allValuesSplitForLow[1].split('"')[0]
 
-                    allValuesSplitForHigh = allValues.split('max="')
+                    allValuesSplitForHigh = allValues.split('max="')        # HIGH till now today
                     high = allValuesSplitForHigh[1].split('"')[0]
 
-                    allValuesSplitForValue = allValues.split('value="')
+                    allValuesSplitForValue = allValues.split('value="')         #Current Stock Value
                     value = allValuesSplitForValue[1].split('"')[0]
                     
                     print(str(i) + ' ' + symbols[i] + ' ' + companyNames[i] + '\n' + allValues +'\n\n\n' )
