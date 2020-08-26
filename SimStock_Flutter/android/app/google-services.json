@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "734479200493",
+    "firebase_url": "https://smarttech-ee0de.firebaseio.com",
+    "project_id": "smarttech-ee0de",
+    "storage_bucket": "smarttech-ee0de.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:734479200493:android:6d041c678f68536dc41ce4",
+        "android_client_info": {
+          "package_name": "com.eisb.simstock"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "734479200493-bc4g7b5dq125hvhu3m91205m48r0ve7d.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBkTCb6p0nicxJgsetbVF3qupAy7-j6vRw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "734479200493-bc4g7b5dq125hvhu3m91205m48r0ve7d.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
